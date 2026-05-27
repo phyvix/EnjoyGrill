@@ -30,23 +30,6 @@ body { font-family:'Poppins',sans-serif; background:var(--cream); color:var(--te
 .floater { position:absolute; opacity:0.06; animation:float linear infinite; }
 @keyframes float { 0%{transform:translateY(110vh) rotate(0deg)} 100%{transform:translateY(-10vh) rotate(360deg)} }
 
-/* HERO */
-.hero {
-  position:relative; min-height:100vh; display:flex; flex-direction:column;
-  justify-content:center; align-items:center; text-align:center; padding:60px 24px;
-  background:linear-gradient(160deg,#1A0A00 0%,#3D1500 40%,#6B2800 100%); overflow:hidden;
-}
-.hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 100%,rgba(255,107,53,0.3) 0%,transparent 70%); }
-.hero-badge { background:rgba(255,107,53,0.2); border:1px solid rgba(255,107,53,0.4); color:#FF8C5A; padding:8px 20px; border-radius:100px; font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-bottom:24px; position:relative; z-index:1; }
-.hero h1 { font-size:clamp(2.8rem,8vw,6rem); font-weight:900; line-height:1.05; color:#fff; position:relative; z-index:1; margin-bottom:8px; }
-.hero h1 span { color:var(--orange); }
-.hero-sub { font-size:clamp(1rem,2.5vw,1.3rem); color:rgba(255,255,255,0.7); max-width:600px; line-height:1.7; position:relative; z-index:1; margin-bottom:40px; }
-.hero-stats { display:flex; gap:40px; position:relative; z-index:1; flex-wrap:wrap; justify-content:center; }
-.stat-num { font-size:2rem; font-weight:800; color:var(--orange); }
-.stat-label { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
-.scroll-hint { position:absolute; bottom:32px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.4); font-size:13px; animation:bounce 2s infinite; z-index:1; }
-@keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
-
 /* STORY */
 .story { padding:80px 24px; max-width:900px; margin:0 auto; }
 .section-label { font-size:12px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--orange); margin-bottom:12px; }
