@@ -120,7 +120,7 @@ body { font-family:'Poppins',sans-serif; background:var(--cream); color:var(--te
 
 /* Inputs */
 label { display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
-input[type="text"],input[type="tel"],input[type="date"],textarea {
+input[type="text"],input[type="tel"],input[type="date"],input[type="time"],textarea {
   width:100%; padding:14px 18px; border:1.5px solid #E8DDD5; border-radius:var(--radius-sm);
   font-family:'Poppins',sans-serif; font-size:14px; color:var(--text); background:var(--cream);
   outline:none; transition:border-color 0.2s,box-shadow 0.2s; margin-bottom:16px;
@@ -331,8 +331,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:
         <input type="tel" id="custWA" placeholder="Contoh: 08123456789" oninput="updateProgress()">
         <label>Alamat Pengiriman <span class="mandatory">*Wajib</span></label>
         <textarea id="custAddr" placeholder="Tulis alamat lengkap termasuk RT/RW, kelurahan, dan patokan rumah ya..." oninput="updateProgress()"></textarea>
-        <label>📅 Tanggal Acara <span class="mandatory">*Wajib</span></label>
-        <input type="date" id="custDate" oninput="updateProgress()" min="">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label>📅 Tanggal Acara <span class="mandatory">*Wajib</span></label>
+            <input type="date" id="custDate" oninput="updateProgress()" min="" style="margin-bottom:0">
+          </div>
+          <div>
+            <label>🕐 Jam Acara <span class="mandatory">*Wajib</span></label>
+            <input type="time" id="custTime" oninput="updateProgress()" style="margin-bottom:0">
+          </div>
+        </div>
+        <div style="margin-bottom:16px;"></div>
+        <div class="note-box">⏰ <strong>Pemesanan maksimal H-1 sebelum acara.</strong> Pesan dadakan? Hubungi admin langsung dulu ya → <a href="https://wa.me/6285771276910?text=Halo%20admin%2C%20saya%20mau%20order%20dadakan!" style="color:var(--orange);font-weight:700;text-decoration:none;">085771276910 (WA Admin)</a> 🙏</div>
         <div class="note-box">💡 <strong>Tips:</strong> Makin detail alamatnya, makin cepat drivernya nemuin rumah kamu!</div>
         <div class="slide-nav">
           <button class="btn-next" onclick="goNext(0)">Pilih Alat Masak →</button>
@@ -861,8 +871,9 @@ function updateProgress() {
   const wa = document.getElementById('custWA').value.trim();
   const addr = document.getElementById('custAddr').value.trim();
   const date = document.getElementById('custDate').value;
+  const time = document.getElementById('custTime').value;
   let score = 0;
-  if (name) score += 12; if (wa) score += 12; if (addr) score += 8; if (date) score += 8;
+  if (name) score += 12; if (wa) score += 12; if (addr) score += 8; if (date) score += 4; if (time) score += 4;
   if (qty.grill + qty.shabu + qty.shabuonly > 0) score += 15;
   if (qty.beef > 0 && variants.beef) score += 10;
   if (qty.chicken > 0 && variants.chicken) score += 5;
@@ -906,7 +917,9 @@ function sendOrder() {
   const addr = document.getElementById('custAddr').value.trim();
   const note = document.getElementById('custNote').value.trim();
   const dateVal = document.getElementById('custDate').value;
+  const timeVal = document.getElementById('custTime').value;
   const dateFormatted = dateVal ? new Date(dateVal).toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : '-';
+  const timeFormatted = timeVal ? timeVal : '-';
   if (!payment) { showToast('⚠️ Pilih metode pembayaran dulu!'); return; }
 
   const payNames = { qris:'QRIS (GoPay/OVO/Dana/ShopeePay)', bca:'Transfer BCA' };
@@ -919,7 +932,7 @@ function sendOrder() {
   };
 
   let msg = `🔥 *ORDER GRILLSHABU EXPRESS* 🔥\n━━━━━━━━━━━━━━━━━━━━\n`;
-  msg += `👤 *Nama:* ${name}\n📱 *WA:* ${wa}\n📍 *Alamat:* ${addr}\n📅 *Tanggal Acara:* ${dateFormatted}\n`;
+  msg += `👤 *Nama:* ${name}\n📱 *WA:* ${wa}\n📍 *Alamat:* ${addr}\n📅 *Tanggal Acara:* ${dateFormatted}\n🕐 *Jam Acara:* ${timeFormatted}\n`;
   msg += `━━━━━━━━━━━━━━━━━━━━\n🍳 *ALAT MASAK:*\n`;
   if (qty.grill > 0) msg += `  • Grill Set ×${qty.grill} = Rp ${(qty.grill*60000).toLocaleString('id')}\n`;
   if (qty.shabu > 0) msg += `  • Shabu & Grill Set ×${qty.shabu} = Rp ${(qty.shabu*75000).toLocaleString('id')}\n`;
