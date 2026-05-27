@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EnjoyGrill_ — Order Online</title>
+<title>EnjoyGrill</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -72,7 +72,10 @@ body { font-family:'Poppins',sans-serif; background:var(--cream); color:var(--te
   position:relative; z-index:1;
 }
 .step-dot.active { background:var(--orange); border-color:var(--orange); color:white; transform:scale(1.15); box-shadow:0 4px 16px rgba(255,107,53,0.4); }
-.step-dot.done { background:var(--orange-dark); border-color:var(--orange-dark); color:white; }
+.step-dot.done { background:var(--orange-dark); border-color:var(--orange-dark); color:white; cursor:pointer; }
+.step-dot.done:hover { background:var(--orange); border-color:var(--orange); transform:scale(1.1); }
+.step-dot.locked { opacity:0.4; cursor:not-allowed; }
+.step-lbl.done { color:var(--orange-dark); }
 .step-line { width:32px; height:2px; background:#E8DDD5; transition:background 0.4s; flex-shrink:0; }
 .step-line.done { background:var(--orange-dark); }
 .step-labels { display:flex; justify-content:space-between; margin-bottom:28px; padding:0 4px; }
@@ -117,13 +120,14 @@ body { font-family:'Poppins',sans-serif; background:var(--cream); color:var(--te
 
 /* Inputs */
 label { display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
-input[type="text"],input[type="tel"],textarea {
+input[type="text"],input[type="tel"],input[type="date"],textarea {
   width:100%; padding:14px 18px; border:1.5px solid #E8DDD5; border-radius:var(--radius-sm);
   font-family:'Poppins',sans-serif; font-size:14px; color:var(--text); background:var(--cream);
   outline:none; transition:border-color 0.2s,box-shadow 0.2s; margin-bottom:16px;
 }
 input:focus,textarea:focus { border-color:var(--orange); box-shadow:0 0 0 4px rgba(255,107,53,0.1); background:white; }
 textarea { min-height:90px; resize:vertical; }
+input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:0.6; }
 
 /* PRODUCT ROW */
 .product-row {
@@ -327,6 +331,8 @@ textarea { min-height:90px; resize:vertical; }
         <input type="tel" id="custWA" placeholder="Contoh: 08123456789" oninput="updateProgress()">
         <label>Alamat Pengiriman <span class="mandatory">*Wajib</span></label>
         <textarea id="custAddr" placeholder="Tulis alamat lengkap termasuk RT/RW, kelurahan, dan patokan rumah ya..." oninput="updateProgress()"></textarea>
+        <label>📅 Tanggal Acara <span class="mandatory">*Wajib</span></label>
+        <input type="date" id="custDate" oninput="updateProgress()" min="">
         <div class="note-box">💡 <strong>Tips:</strong> Makin detail alamatnya, makin cepat drivernya nemuin rumah kamu!</div>
         <div class="slide-nav">
           <button class="btn-next" onclick="goNext(0)">Pilih Alat Masak →</button>
@@ -632,10 +638,19 @@ stepConfig.forEach((s, i) => {
     dotsContainer.appendChild(line);
   }
   const dot = document.createElement('div');
-  dot.className = 'step-dot' + (i === 0 ? ' active' : '');
+  dot.className = 'step-dot' + (i === 0 ? ' active' : ' locked');
   dot.id = 'dot-' + i;
   dot.textContent = s.icon;
-  dot.onclick = () => { if (i < currentSlide) goToSlide(i); };
+  dot.onclick = () => {
+    if (i < currentSlide) {
+      // Going back — always allowed
+      goToSlide(i);
+    } else if (i > currentSlide) {
+      // Going forward — blocked, show hint
+      showToast('⚠️ Selesaikan langkah ' + (currentSlide + 1) + ' dulu ya!');
+    }
+    // i === currentSlide: do nothing
+  };
   dotsContainer.appendChild(dot);
 
   const lbl = document.createElement('div');
@@ -676,10 +691,17 @@ function updateStepDots() {
   for (let i = 0; i < TOTAL_SLIDES; i++) {
     const dot = document.getElementById('dot-' + i);
     const lbl = document.getElementById('lbl-' + i);
-    dot.classList.remove('active', 'done');
-    lbl.classList.remove('active');
-    if (i < currentSlide) { dot.classList.add('done'); }
-    else if (i === currentSlide) { dot.classList.add('active'); lbl.classList.add('active'); }
+    dot.classList.remove('active', 'done', 'locked');
+    lbl.classList.remove('active', 'done');
+    if (i < currentSlide) {
+      dot.classList.add('done');
+      lbl.classList.add('done');
+    } else if (i === currentSlide) {
+      dot.classList.add('active');
+      lbl.classList.add('active');
+    } else {
+      dot.classList.add('locked');
+    }
     if (i > 0) {
       const line = document.getElementById('line-' + i);
       line.classList.toggle('done', i <= currentSlide);
@@ -693,9 +715,13 @@ function validateSlide(idx) {
     const name = document.getElementById('custName').value.trim();
     const wa = document.getElementById('custWA').value.trim();
     const addr = document.getElementById('custAddr').value.trim();
+    const date = document.getElementById('custDate').value;
     if (!name) { showToast('⚠️ Nama wajib diisi!'); return false; }
     if (!wa) { showToast('⚠️ Nomor WA wajib diisi!'); return false; }
     if (!addr) { showToast('⚠️ Alamat wajib diisi!'); return false; }
+    if (!date) { showToast('⚠️ Tanggal acara wajib diisi!'); return false; }
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (new Date(date) < today) { showToast('⚠️ Tanggal acara tidak boleh di masa lalu!'); return false; }
     return true;
   }
   if (idx === 1) {
@@ -834,8 +860,9 @@ function updateProgress() {
   const name = document.getElementById('custName').value.trim();
   const wa = document.getElementById('custWA').value.trim();
   const addr = document.getElementById('custAddr').value.trim();
+  const date = document.getElementById('custDate').value;
   let score = 0;
-  if (name) score += 15; if (wa) score += 15; if (addr) score += 10;
+  if (name) score += 12; if (wa) score += 12; if (addr) score += 8; if (date) score += 8;
   if (qty.grill + qty.shabu + qty.shabuonly > 0) score += 15;
   if (qty.beef > 0 && variants.beef) score += 10;
   if (qty.chicken > 0 && variants.chicken) score += 5;
@@ -878,6 +905,8 @@ function sendOrder() {
   const wa = document.getElementById('custWA').value.trim();
   const addr = document.getElementById('custAddr').value.trim();
   const note = document.getElementById('custNote').value.trim();
+  const dateVal = document.getElementById('custDate').value;
+  const dateFormatted = dateVal ? new Date(dateVal).toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : '-';
   if (!payment) { showToast('⚠️ Pilih metode pembayaran dulu!'); return; }
 
   const payNames = { qris:'QRIS (GoPay/OVO/Dana/ShopeePay)', bca:'Transfer BCA' };
@@ -890,7 +919,7 @@ function sendOrder() {
   };
 
   let msg = `🔥 *ORDER GRILLSHABU EXPRESS* 🔥\n━━━━━━━━━━━━━━━━━━━━\n`;
-  msg += `👤 *Nama:* ${name}\n📱 *WA:* ${wa}\n📍 *Alamat:* ${addr}\n`;
+  msg += `👤 *Nama:* ${name}\n📱 *WA:* ${wa}\n📍 *Alamat:* ${addr}\n📅 *Tanggal Acara:* ${dateFormatted}\n`;
   msg += `━━━━━━━━━━━━━━━━━━━━\n🍳 *ALAT MASAK:*\n`;
   if (qty.grill > 0) msg += `  • Grill Set ×${qty.grill} = Rp ${(qty.grill*60000).toLocaleString('id')}\n`;
   if (qty.shabu > 0) msg += `  • Shabu & Grill Set ×${qty.shabu} = Rp ${(qty.shabu*75000).toLocaleString('id')}\n`;
@@ -933,6 +962,7 @@ function fallbackApp(webUrl, deeplink) {
 }
 
 // ── INIT
+document.getElementById('custDate').min = new Date().toISOString().split('T')[0];
 updateSteamLock();
 updateSummary();
 updateProgress();
