@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrillShabu Express — Order Online</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #FF6B35;
+  --orange-light: #FF8C5A;
+  --orange-dark: #E85520;
+  --cream: #FFF8F0;
+  --warm: #FFF3E6;
+  --text: #2D1B0E;
+  --text-muted: #7A5C4A;
+  --border: rgba(255,107,53,0.2);
+  --shadow: 0 8px 32px rgba(255,107,53,0.15);
+  --radius: 24px;
+  --radius-sm: 16px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Poppins',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; cursor:none; }
+
+/* CURSOR */
+#cursor { position:fixed; font-size:20px; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:transform 0.1s; }
+
+/* FLOATERS */
+.floaters { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.floater { position:absolute; opacity:0.06; animation:float linear infinite; }
+@keyframes float { 0%{transform:translateY(110vh) rotate(0deg)} 100%{transform:translateY(-10vh) rotate(360deg)} }
+
+/* HERO */
+.hero {
+  position:relative; min-height:100vh; display:flex; flex-direction:column;
+  justify-content:center; align-items:center; text-align:center; padding:60px 24px;
+  background:linear-gradient(160deg,#1A0A00 0%,#3D1500 40%,#6B2800 100%); overflow:hidden;
+}
+.hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 100%,rgba(255,107,53,0.3) 0%,transparent 70%); }
+.hero-badge { background:rgba(255,107,53,0.2); border:1px solid rgba(255,107,53,0.4); color:#FF8C5A; padding:8px 20px; border-radius:100px; font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-bottom:24px; position:relative; z-index:1; }
+.hero h1 { font-size:clamp(2.8rem,8vw,6rem); font-weight:900; line-height:1.05; color:#fff; position:relative; z-index:1; margin-bottom:8px; }
+.hero h1 span { color:var(--orange); }
+.hero-sub { font-size:clamp(1rem,2.5vw,1.3rem); color:rgba(255,255,255,0.7); max-width:600px; line-height:1.7; position:relative; z-index:1; margin-bottom:40px; }
+.hero-stats { display:flex; gap:40px; position:relative; z-index:1; flex-wrap:wrap; justify-content:center; }
+.stat-num { font-size:2rem; font-weight:800; color:var(--orange); }
+.stat-label { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; }
+.scroll-hint { position:absolute; bottom:32px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.4); font-size:13px; animation:bounce 2s infinite; z-index:1; }
+@keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
+
+/* STORY */
+.story { padding:80px 24px; max-width:900px; margin:0 auto; }
+.section-label { font-size:12px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--orange); margin-bottom:12px; }
+.story-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:40px 0; }
+@media(max-width:640px){ .story-grid{grid-template-columns:1fr} }
+.story-card { background:white; border-radius:var(--radius); padding:28px; border:1.5px solid var(--border); position:relative; overflow:hidden; transition:transform 0.3s,box-shadow 0.3s; }
+.story-card:hover { transform:translateY(-4px); box-shadow:var(--shadow); }
+.story-card.problem::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:#E24B4A; border-radius:4px 4px 0 0; }
+.story-card.solution::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:var(--orange); border-radius:4px 4px 0 0; }
+.card-icon { font-size:2.5rem; margin-bottom:12px; }
+.card-title { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
+.card-text { font-size:14px; color:var(--text-muted); line-height:1.7; }
+
+/* LOCATION */
+.location-section { background:linear-gradient(135deg,#1A0A00 0%,#3D1500 100%); padding:60px 24px; text-align:center; color:white; border-radius:40px; margin:0 16px 60px; position:relative; overflow:hidden; }
+.location-section::after { content:'📍'; position:absolute; font-size:15rem; opacity:0.03; right:-2rem; bottom:-3rem; }
+.location-section h2 { font-size:1.8rem; font-weight:800; margin-bottom:12px; }
+.location-section p { opacity:0.7; max-width:500px; margin:0 auto 28px; font-size:14px; line-height:1.7; }
+.location-btn { display:inline-flex; align-items:center; gap:10px; background:var(--orange); color:white; padding:14px 28px; border-radius:100px; font-weight:700; font-size:15px; text-decoration:none; transition:transform 0.2s,background 0.2s; }
+.location-btn:hover { background:var(--orange-light); transform:scale(1.05); }
+.location-address { font-size:12px; opacity:0.5; max-width:400px; margin:16px auto 0; line-height:1.6; }
+
+/* ═══════════ SLIDER SYSTEM ═══════════ */
+.slider-outer {
+  max-width:800px; margin:0 auto; padding:0 16px 80px;
+}
+
+/* Step Indicator */
+.step-indicator {
+  display:flex; align-items:center; justify-content:center;
+  gap:0; margin-bottom:32px; padding:0 8px;
+}
+.step-dot-wrap { display:flex; align-items:center; gap:0; }
+.step-dot {
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:700;
+  background:white; border:2px solid #E8DDD5; color:var(--text-muted);
+  transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  cursor:pointer; flex-shrink:0;
+  position:relative; z-index:1;
+}
+.step-dot.active { background:var(--orange); border-color:var(--orange); color:white; transform:scale(1.15); box-shadow:0 4px 16px rgba(255,107,53,0.4); }
+.step-dot.done { background:var(--orange-dark); border-color:var(--orange-dark); color:white; }
+.step-line { width:32px; height:2px; background:#E8DDD5; transition:background 0.4s; flex-shrink:0; }
+.step-line.done { background:var(--orange-dark); }
+.step-labels { display:flex; justify-content:space-between; margin-bottom:28px; padding:0 4px; }
+.step-lbl { font-size:11px; font-weight:600; color:var(--text-muted); text-align:center; flex:1; transition:color 0.3s; }
+.step-lbl.active { color:var(--orange); }
+
+/* Slide track */
+.slide-viewport { overflow:hidden; border-radius:var(--radius); }
+.slide-track {
+  display:flex;
+  transition:transform 0.5s cubic-bezier(0.77,0,0.175,1);
+  will-change:transform;
+}
+.slide {
+  min-width:100%; padding:32px;
+  background:white; border-radius:var(--radius);
+  border:1.5px solid var(--border);
+  box-shadow:0 4px 24px rgba(0,0,0,0.05);
+}
+
+/* Slide header */
+.slide-step-badge { display:inline-flex; align-items:center; gap:8px; background:var(--warm); border:1.5px solid var(--border); padding:6px 14px; border-radius:100px; font-size:12px; font-weight:700; color:var(--orange); margin-bottom:16px; letter-spacing:1px; text-transform:uppercase; }
+.slide h3 { font-size:1.3rem; font-weight:800; margin-bottom:4px; }
+.slide .subtitle { font-size:13px; color:var(--text-muted); margin-bottom:24px; line-height:1.6; }
+
+/* NAV BUTTONS */
+.slide-nav { display:flex; gap:12px; margin-top:28px; align-items:center; }
+.btn-prev {
+  padding:14px 24px; border-radius:100px; border:2px solid #E8DDD5;
+  background:white; font-family:'Poppins',sans-serif; font-size:14px; font-weight:700;
+  color:var(--text-muted); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:8px;
+}
+.btn-prev:hover { border-color:var(--orange); color:var(--orange); }
+.btn-next {
+  flex:1; padding:16px 24px; border-radius:100px; border:none;
+  background:var(--orange); font-family:'Poppins',sans-serif; font-size:15px; font-weight:800;
+  color:white; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:10px;
+  box-shadow:0 6px 20px rgba(255,107,53,0.35);
+}
+.btn-next:hover { background:var(--orange-dark); transform:translateY(-2px); box-shadow:0 10px 28px rgba(255,107,53,0.45); }
+.btn-next:active { transform:scale(0.98); }
+
+/* Inputs */
+label { display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+input[type="text"],input[type="tel"],textarea {
+  width:100%; padding:14px 18px; border:1.5px solid #E8DDD5; border-radius:var(--radius-sm);
+  font-family:'Poppins',sans-serif; font-size:14px; color:var(--text); background:var(--cream);
+  outline:none; transition:border-color 0.2s,box-shadow 0.2s; margin-bottom:16px;
+}
+input:focus,textarea:focus { border-color:var(--orange); box-shadow:0 0 0 4px rgba(255,107,53,0.1); background:white; }
+textarea { min-height:90px; resize:vertical; }
+
+/* PRODUCT ROW */
+.product-row {
+  display:flex; align-items:center; gap:14px;
+  padding:16px; border-radius:var(--radius-sm);
+  border:1.5px solid #F0E8E0; background:var(--cream); margin-bottom:12px;
+  transition:border-color 0.2s,background 0.2s,transform 0.2s;
+}
+.product-row:hover { transform:translateX(4px); }
+.product-row.active { border-color:var(--orange); background:var(--warm); }
+.product-row.disabled { opacity:0.35; pointer-events:none; filter:grayscale(0.5); }
+.product-emoji { font-size:2rem; flex-shrink:0; }
+.product-info { flex:1; min-width:0; }
+.product-name { font-weight:700; font-size:14px; }
+.product-desc { font-size:12px; color:var(--text-muted); line-height:1.5; margin-top:2px; }
+.product-price { font-size:13px; font-weight:700; color:var(--orange); margin-top:4px; }
+
+/* LOCKED OVERLAY for steamboat */
+.lock-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#FFF0EE; border:1.5px solid #FFCFC7; color:#C0392B;
+  padding:4px 12px; border-radius:100px; font-size:11px; font-weight:700; margin-top:6px;
+}
+
+/* QTY */
+.qty-control { display:flex; align-items:center; background:white; border:1.5px solid #E8DDD5; border-radius:100px; overflow:hidden; flex-shrink:0; }
+.qty-btn { width:36px; height:36px; background:none; border:none; font-size:18px; font-weight:700; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:color 0.2s,background 0.2s; font-family:'Poppins',sans-serif; }
+.qty-btn:hover { color:var(--orange); background:var(--warm); }
+.qty-num { min-width:36px; text-align:center; font-size:14px; font-weight:700; color:var(--text); }
+
+/* VARIANT CHIPS */
+.variant-chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.chip { padding:6px 14px; border-radius:100px; border:1.5px solid #E8DDD5; font-size:12px; font-weight:600; cursor:pointer; background:white; color:var(--text-muted); transition:all 0.2s; font-family:'Poppins',sans-serif; }
+.chip:hover { border-color:var(--orange-light); }
+.chip.selected { background:var(--orange); border-color:var(--orange); color:white; }
+
+/* PAYMENT */
+.payment-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:480px){ .payment-grid{grid-template-columns:1fr} }
+.payment-option { border:2px solid #E8DDD5; border-radius:var(--radius-sm); padding:20px; cursor:pointer; text-align:center; transition:all 0.25s; background:var(--cream); }
+.payment-option:hover { border-color:var(--orange-light); background:var(--warm); transform:translateY(-3px); }
+.payment-option.selected { border-color:var(--orange); background:var(--warm); transform:translateY(-3px); box-shadow:0 8px 20px rgba(255,107,53,0.2); }
+.payment-option.selected .pay-name { color:var(--orange); }
+.pay-icon { font-size:2.5rem; margin-bottom:8px; }
+.pay-name { font-weight:700; font-size:15px; }
+.pay-desc { font-size:12px; color:var(--text-muted); margin-top:4px; }
+
+/* SUMMARY CARD */
+.summary-card { background:linear-gradient(135deg,#1A0A00 0%,#3D1500 100%); border-radius:var(--radius); padding:32px; color:white; margin-bottom:24px; position:relative; overflow:hidden; }
+.summary-card::before { content:'🔥'; position:absolute; font-size:12rem; opacity:0.04; right:-2rem; top:-3rem; }
+.summary-title { font-size:1.1rem; font-weight:700; margin-bottom:20px; opacity:0.9; }
+.summary-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:13px; }
+.summary-row:last-child { border:none; }
+.summary-label { opacity:0.7; }
+.summary-value { font-weight:600; }
+.summary-total { display:flex; justify-content:space-between; align-items:center; padding-top:16px; margin-top:8px; border-top:2px solid rgba(255,107,53,0.4); }
+.total-label { font-weight:700; font-size:1rem; }
+.total-value { font-size:1.6rem; font-weight:900; color:var(--orange); }
+
+/* CTA */
+.cta-btn { width:100%; padding:18px 32px; background:var(--orange); color:white; border:none; border-radius:100px; font-family:'Poppins',sans-serif; font-size:1.1rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:12px; transition:transform 0.2s,background 0.2s,box-shadow 0.2s; box-shadow:0 8px 24px rgba(255,107,53,0.4); }
+.cta-btn:hover { background:var(--orange-dark); transform:scale(1.02); box-shadow:0 12px 32px rgba(255,107,53,0.5); }
+.cta-btn:active { transform:scale(0.98); }
+
+/* NOTE BOX */
+.note-box { background:#FFF3E6; border:1.5px solid rgba(255,107,53,0.25); border-radius:var(--radius-sm); padding:14px 18px; font-size:13px; color:var(--text-muted); margin-top:12px; line-height:1.6; }
+.note-box strong { color:var(--orange); }
+.mandatory { color:#E24B4A; font-size:11px; font-weight:700; margin-left:4px; }
+
+/* PROGRESS */
+.progress-wrap { position:sticky; top:0; z-index:100; background:rgba(255,248,240,0.95); backdrop-filter:blur(12px); padding:10px 24px; border-bottom:1px solid var(--border); }
+.progress-inner { display:flex; align-items:center; gap:12px; max-width:800px; margin:0 auto; }
+.progress-bar-outer { flex:1; height:6px; background:#F0E8E0; border-radius:100px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:var(--orange); border-radius:100px; transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1); width:0%; }
+.progress-pct { font-size:12px; font-weight:700; color:var(--orange); min-width:32px; text-align:right; }
+
+/* TOAST */
+.toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(100px); background:#2D1B0E; color:white; padding:14px 24px; border-radius:100px; font-size:14px; font-weight:600; z-index:9998; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); white-space:nowrap; pointer-events:none; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* CONFETTI */
+.confetti-piece { position:fixed; pointer-events:none; z-index:9999; animation:confetti-fall 3s forwards; }
+@keyframes confetti-fall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+
+/* SLIDE ENTER ANIMATIONS */
+@keyframes slideInRight { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideInLeft { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
+.slide.anim-in-right { animation:slideInRight 0.4s ease forwards; }
+.slide.anim-in-left { animation:slideInLeft 0.4s ease forwards; }
+
+/* Product section header */
+.prod-section-hdr { font-weight:700; font-size:13px; color:var(--text-muted); margin:20px 0 8px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px; }
+.prod-row-variant { flex-direction:column; align-items:flex-start; gap:12px; }
+.prod-row-variant .prod-row-top { display:flex; align-items:center; gap:14px; width:100%; }
+
+/* Shabu-only tag */
+.shabu-only-tag { display:inline-flex; align-items:center; gap:5px; background:#E8F4FD; border:1px solid #B3D8F0; color:#1A6FA3; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div id="cursor">🔥</div>
+<div class="floaters" id="floaters"></div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <div class="progress-bar-outer"><div class="progress-bar-fill" id="progressBar"></div></div>
+    <div class="progress-pct" id="progressPct">0%</div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🔥 Fresh · Hot · Delivered</div>
+  <h1>Grill & Shabu<br><span>di Rumah Aja</span></h1>
+  <p class="hero-sub">Nikmati sensasi BBQ dan shabu-shabu segar, lengkap dengan alat masak. Tinggal duduk, kami siapkan semuanya! 🍖🥢</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">⭐ 4.9</div><div class="stat-label">Rating pelanggan</div></div>
+    <div class="stat"><div class="stat-num">500+</div><div class="stat-label">Order terpenuhi</div></div>
+    <div class="stat"><div class="stat-num">30 mnt</div><div class="stat-label">Estimasi siap</div></div>
+  </div>
+  <div class="scroll-hint">↓ Lihat ceritanya</div>
+</section>
+
+<!-- STORY -->
+<section class="story">
+  <div class="section-label">✨ Kenapa GrillShabu?</div>
+  <h2 style="font-size:2rem;font-weight:800;margin-bottom:32px;">Pernah Ngerasain Ini?</h2>
+  <div class="story-grid">
+    <div class="story-card problem">
+      <div class="card-icon">😩</div>
+      <div class="card-title">Mau Makan BBQ/Shabu Ribet!</div>
+      <div class="card-text">Harus ke restoran, antre panjang, parkir susah, harga mahal. Atau beli bahan sendiri tapi alat masak nggak punya.</div>
+    </div>
+    <div class="story-card problem">
+      <div class="card-icon">💸</div>
+      <div class="card-title">Habis Banyak, Kurang Puas</div>
+      <div class="card-text">Bayar mahal di restoran, tapi porsi sedikit. Pengen nambah tapi mikirin biayanya dua kali.</div>
+    </div>
+    <div class="story-card solution">
+      <div class="card-icon">🎉</div>
+      <div class="card-title">Solusinya Ada di Sini!</div>
+      <div class="card-text">Kami antar semua ke rumah kamu — alat masak, bahan segar, bumbu lengkap. Tinggal bakar, makan, happy!</div>
+    </div>
+    <div class="story-card solution">
+      <div class="card-icon">💰</div>
+      <div class="card-title">Harga Bersahabat, Kualitas Bintang</div>
+      <div class="card-text">Mulai Rp 60ribu sudah dapat kompor, pan, gas, dan alat lengkap. Daging segar pilihan, bukan frozen sembarangan!</div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:20px 0;">
+    <div style="font-size:1.2rem;font-weight:700;margin-bottom:8px;">Udah yakin? Yuk order sekarang! 👇</div>
+    <div style="font-size:14px;color:var(--text-muted);">Scroll ke bawah, isi form, dan kita urus sisanya 🔥</div>
+  </div>
+</section>
+
+<!-- LOCATION -->
+<div class="location-section">
+  <h2>📍 Titik Jemput Kami</h2>
+  <p>Cek dulu estimasi ongkir ojek online (Gojek/Grab/Maxim) dari lokasi kami ke rumah kamu ya!</p>
+  <a href="https://maps.app.goo.gl/cAigyiZT4jx4Ns959" target="_blank" class="location-btn">🗺️ Buka Google Maps</a>
+  <div style="font-size:13px;opacity:0.6;margin-top:12px;">Tap untuk cek di Gojek/Grab/Maxim</div>
+  <div class="location-address">Jalan Ks. Tubun Raya 1 No. 24, Kota Bambu Selatan, Palmerah, RT.4/RW.2, Jakarta Barat 11420</div>
+</div>
+
+<!-- ═══════ SLIDER FORM ═══════ -->
+<div class="slider-outer" id="formArea">
+
+  <!-- Step dots -->
+  <div class="step-indicator" id="stepDots"></div>
+  <div class="step-labels" id="stepLabels"></div>
+
+  <!-- Viewport -->
+  <div class="slide-viewport">
+    <div class="slide-track" id="slideTrack">
+
+      <!-- SLIDE 1: INFO -->
+      <div class="slide" id="slide-0">
+        <div class="slide-step-badge">📋 Langkah 1 dari 4</div>
+        <h3>Informasi Kamu</h3>
+        <div class="subtitle">Isi data diri dulu biar kami bisa konfirmasi order ya 😊</div>
+        <label>Nama Lengkap <span class="mandatory">*Wajib</span></label>
+        <input type="text" id="custName" placeholder="Misal: Budi Santoso" oninput="updateProgress()">
+        <label>Nomor WhatsApp <span class="mandatory">*Wajib</span></label>
+        <input type="tel" id="custWA" placeholder="Contoh: 08123456789" oninput="updateProgress()">
+        <label>Alamat Pengiriman <span class="mandatory">*Wajib</span></label>
+        <textarea id="custAddr" placeholder="Tulis alamat lengkap termasuk RT/RW, kelurahan, dan patokan rumah ya..." oninput="updateProgress()"></textarea>
+        <div class="note-box">💡 <strong>Tips:</strong> Makin detail alamatnya, makin cepat drivernya nemuin rumah kamu!</div>
+        <div class="slide-nav">
+          <button class="btn-next" onclick="goNext(0)">Pilih Alat Masak →</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: ALAT MASAK -->
+      <div class="slide" id="slide-1">
+        <div class="slide-step-badge">🍳 Langkah 2 dari 4</div>
+        <h3>Pilih Alat Masak</h3>
+        <div class="subtitle">Tentukan jenis dan jumlah unit yang kamu butuhkan (max 10 unit total)</div>
+
+        <div class="product-row" id="row-grill">
+          <div class="product-emoji">🔥</div>
+          <div class="product-info">
+            <div class="product-name">Grill Set</div>
+            <div class="product-desc">Kompor · Pan Grill · Gas · Capitan</div>
+            <div class="product-price">Rp 60.000 / unit</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty('grill',-1)">−</button>
+            <div class="qty-num" id="qty-grill">0</div>
+            <button class="qty-btn" onclick="changeQty('grill',1)">+</button>
+          </div>
+        </div>
+
+        <div class="product-row" id="row-shabu">
+          <div class="product-emoji">🍲</div>
+          <div class="product-info">
+            <div class="product-name">Shabu & Grill Set</div>
+            <div class="product-desc">Kompor · Pan · Capitan · Centong · Gas</div>
+            <div class="product-price">Rp 75.000 / unit</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty('shabu',-1)">−</button>
+            <div class="qty-num" id="qty-shabu">0</div>
+            <button class="qty-btn" onclick="changeQty('shabu',1)">+</button>
+          </div>
+        </div>
+
+        <div class="note-box">📦 <strong>Butuh lebih dari 10 unit?</strong> Hubungi admin di <strong><a href="https://wa.me/6285771276910" style="color:var(--orange);text-decoration:none;">085771276910</a></strong></div>
+
+        <div class="slide-nav">
+          <button class="btn-prev" onclick="goPrev(1)">← Kembali</button>
+          <button class="btn-next" onclick="goNext(1)">Pilih Bahan Makanan →</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: BAHAN -->
+      <div class="slide" id="slide-2">
+        <div class="slide-step-badge">🥩 Langkah 3 dari 4</div>
+        <h3>Pilih Bahan Makanan</h3>
+        <div class="subtitle">Semua bahan wajib diisi minimal 1. Sesuaikan porsi sesuai selera! 😋</div>
+
+        <!-- BEEF -->
+        <div class="prod-section-hdr">🐄 Beef Slice <span class="mandatory">*Wajib min. 1</span></div>
+        <div class="product-row prod-row-variant" id="row-beef">
+          <div class="prod-row-top">
+            <div class="product-emoji">🥩</div>
+            <div class="product-info">
+              <div class="product-name">Beef Slice</div>
+              <div class="product-desc">250gr / pack</div>
+              <div class="product-price">Rp 40.000 / pack</div>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty('beef',-1)">−</button>
+              <div class="qty-num" id="qty-beef">0</div>
+              <button class="qty-btn" onclick="changeQty('beef',1)">+</button>
+            </div>
+          </div>
+          <div style="padding-left:4px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Pilih jenis:</div>
+            <div class="variant-chips">
+              <div class="chip" id="beef-lemak" onclick="selectChip('beef','lemak')">🟡 Dengan Lemak</div>
+              <div class="chip" id="beef-nlemak" onclick="selectChip('beef','nlemak')">⚪ Non Lemak</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHICKEN -->
+        <div class="prod-section-hdr">🍗 Chicken Slice <span class="mandatory">*Wajib min. 1</span></div>
+        <div class="product-row prod-row-variant" id="row-chicken">
+          <div class="prod-row-top">
+            <div class="product-emoji">🍗</div>
+            <div class="product-info">
+              <div class="product-name">Chicken Sliced</div>
+              <div class="product-desc">250gr / pack · Dada atau Paha</div>
+              <div class="product-price">Rp 25.000 / pack</div>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty('chicken',-1)">−</button>
+              <div class="qty-num" id="qty-chicken">0</div>
+              <button class="qty-btn" onclick="changeQty('chicken',1)">+</button>
+            </div>
+          </div>
+          <div style="padding-left:4px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Pilih bagian:</div>
+            <div class="variant-chips">
+              <div class="chip" id="chicken-dada" onclick="selectChip('chicken','dada')">🍗 Dada</div>
+              <div class="chip" id="chicken-paha" onclick="selectChip('chicken','paha')">🍖 Paha</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOSIS -->
+        <div class="prod-section-hdr">🌭 Sosis <span class="mandatory">*Wajib min. 1</span></div>
+        <div class="product-row prod-row-variant" id="row-sosis">
+          <div class="prod-row-top">
+            <div class="product-emoji">🌭</div>
+            <div class="product-info">
+              <div class="product-name">Sosis</div>
+              <div class="product-desc">250gr / pack</div>
+              <div class="product-price">Rp 20.000 / pack</div>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty('sosis',-1)">−</button>
+              <div class="qty-num" id="qty-sosis">0</div>
+              <button class="qty-btn" onclick="changeQty('sosis',1)">+</button>
+            </div>
+          </div>
+          <div style="padding-left:4px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Pilih jenis:</div>
+            <div class="variant-chips">
+              <div class="chip" id="sosis-sapi" onclick="selectChip('sosis','sapi')">🐄 Sapi</div>
+              <div class="chip" id="sosis-ayam" onclick="selectChip('sosis','ayam')">🐔 Ayam</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEAMBOAT - locked/unlocked based on shabu -->
+        <div class="prod-section-hdr">
+          🍜 Steamboat
+          <span class="shabu-only-tag" id="shabu-only-tag">🔒 Khusus Shabu & Grill</span>
+          <span class="mandatory" id="steam-mandatory" style="display:none">*Wajib min. 1</span>
+        </div>
+        <div class="product-row" id="row-steam">
+          <div class="product-emoji">🍜</div>
+          <div class="product-info">
+            <div class="product-name">Steamboat Mix</div>
+            <div class="product-desc">500gr / pack · Bakso, tahu, dan isian steamboat</div>
+            <div class="product-price">Rp 45.000 / pack</div>
+            <div class="lock-badge" id="steam-lock-badge">🔒 Pilih Shabu & Grill dulu untuk unlock</div>
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty('steam',-1)">−</button>
+            <div class="qty-num" id="qty-steam">0</div>
+            <button class="qty-btn" onclick="changeQty('steam',1)">+</button>
+          </div>
+        </div>
+
+        <!-- SAYUR -->
+        <div class="prod-section-hdr">🥬 Sayur <span class="mandatory">*Wajib min. 1</span></div>
+        <div class="product-row prod-row-variant" id="row-sayur">
+          <div class="prod-row-top">
+            <div class="product-emoji">🥬</div>
+            <div class="product-info">
+              <div class="product-name">Paket Sayur</div>
+              <div class="product-desc">Pilih paket di bawah</div>
+              <div class="product-price" id="sayur-price">Rp 15.000 / pack</div>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty('sayur',-1)">−</button>
+              <div class="qty-num" id="qty-sayur">0</div>
+              <button class="qty-btn" onclick="changeQty('sayur',1)">+</button>
+            </div>
+          </div>
+          <div style="padding-left:4px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Pilih paket:</div>
+            <div class="variant-chips">
+              <div class="chip" id="sayur-basic" onclick="selectChip('sayur','basic')">🥬 Selada + Bombay (15rb)</div>
+              <div class="chip" id="sayur-komplit" onclick="selectChip('sayur','komplit')">🌿 Komplit + Enoki (20rb)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAUS -->
+        <div class="prod-section-hdr">🫙 Saus <span class="mandatory">*Wajib min. 1</span></div>
+        <div class="product-row prod-row-variant" id="row-saus">
+          <div class="prod-row-top">
+            <div class="product-emoji">🫙</div>
+            <div class="product-info">
+              <div class="product-name">Saus Celup</div>
+              <div class="product-desc">200ml / botol</div>
+              <div class="product-price">Rp 10.000 / botol</div>
+            </div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty('saus',-1)">−</button>
+              <div class="qty-num" id="qty-saus">0</div>
+              <button class="qty-btn" onclick="changeQty('saus',1)">+</button>
+            </div>
+          </div>
+          <div style="padding-left:4px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Pilih rasa:</div>
+            <div class="variant-chips">
+              <div class="chip" id="saus-bbq" onclick="selectChip('saus','bbq')">🍖 BBQ</div>
+              <div class="chip" id="saus-bp" onclick="selectChip('saus','bp')">🌶️ Black Pepper</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-nav">
+          <button class="btn-prev" onclick="goPrev(2)">← Kembali</button>
+          <button class="btn-next" onclick="goNext(2)">Pilih Pembayaran →</button>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: PEMBAYARAN + RINGKASAN -->
+      <div class="slide" id="slide-3">
+        <div class="slide-step-badge">💳 Langkah 4 dari 4</div>
+        <h3>Pembayaran & Konfirmasi</h3>
+        <div class="subtitle">Pilih cara bayar dan periksa ringkasan order kamu 🧾</div>
+
+        <div class="payment-grid" style="margin-bottom:24px">
+          <div class="payment-option" id="pay-qris" onclick="selectPayment('qris')">
+            <div class="pay-icon">📱</div>
+            <div class="pay-name">QRIS</div>
+            <div class="pay-desc">GoPay · OVO · Dana · ShopeePay</div>
+          </div>
+          <div class="payment-option" id="pay-bca" onclick="selectPayment('bca')">
+            <div class="pay-icon">🏦</div>
+            <div class="pay-name">Transfer BCA</div>
+            <div class="pay-desc">Bank BCA · Konfirmasi bukti transfer</div>
+          </div>
+        </div>
+
+        <!-- RINGKASAN -->
+        <div class="summary-card">
+          <div class="summary-title">🧾 Ringkasan Order Kamu</div>
+          <div id="summaryItems"><div class="summary-row"><span class="summary-label">Belum ada item...</span><span></span></div></div>
+          <div class="summary-total">
+            <span class="total-label">Total Belanja</span>
+            <span class="total-value" id="totalPrice">Rp 0</span>
+          </div>
+          <div style="font-size:11px;opacity:0.5;margin-top:8px;">* Belum termasuk ongkos kirim ojek online</div>
+        </div>
+
+        <!-- CATATAN -->
+        <label style="margin-bottom:8px;">📝 Catatan Tambahan <span style="color:var(--text-muted);font-weight:400;">(opsional)</span></label>
+        <textarea id="custNote" placeholder="Misal: tidak pakai lemak banyak, minta kompor ekstra, dll..." style="margin-bottom:20px;"></textarea>
+
+        <button class="cta-btn" onclick="sendOrder()">
+          <span>💬</span><span>Kirim Order via WhatsApp</span><span>→</span>
+        </button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-muted);line-height:1.7;">
+          Order akan dikonfirmasi admin setelah pesan diterima 🙏🔥
+        </div>
+
+        <div class="slide-nav" style="margin-top:16px">
+          <button class="btn-prev" onclick="goPrev(3)">← Ubah Pesanan</button>
+        </div>
+      </div>
+
+    </div><!-- end slide-track -->
+  </div><!-- end viewport -->
+</div><!-- end slider-outer -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CURSOR
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+document.addEventListener('click', () => {
+  cursor.style.transform = 'translate(-50%,-50%) scale(1.6)';
+  setTimeout(() => cursor.style.transform = 'translate(-50%,-50%) scale(1)', 200);
+});
+
+// ── FLOATERS
+const floaterEmojis = ['🔥','🍖','🥩','🍗','🌭','🥬','🫙','🍲','✨'];
+const floatersCont = document.getElementById('floaters');
+for (let i = 0; i < 18; i++) {
+  const f = document.createElement('div');
+  f.className = 'floater';
+  f.textContent = floaterEmojis[Math.floor(Math.random() * floaterEmojis.length)];
+  f.style.left = Math.random() * 100 + '%';
+  f.style.animationDuration = (8 + Math.random() * 12) + 's';
+  f.style.animationDelay = (-Math.random() * 20) + 's';
+  f.style.fontSize = (1.5 + Math.random() * 2) + 'rem';
+  floatersCont.appendChild(f);
+}
+
+// ── STEP INDICATORS
+const stepConfig = [
+  { label: 'Info', icon: '📋' },
+  { label: 'Alat Masak', icon: '🍳' },
+  { label: 'Bahan', icon: '🥩' },
+  { label: 'Bayar', icon: '💳' },
+];
+const dotsContainer = document.getElementById('stepDots');
+const labelsContainer = document.getElementById('stepLabels');
+
+stepConfig.forEach((s, i) => {
+  if (i > 0) {
+    const line = document.createElement('div');
+    line.className = 'step-line';
+    line.id = 'line-' + i;
+    dotsContainer.appendChild(line);
+  }
+  const dot = document.createElement('div');
+  dot.className = 'step-dot' + (i === 0 ? ' active' : '');
+  dot.id = 'dot-' + i;
+  dot.textContent = s.icon;
+  dot.onclick = () => { if (i < currentSlide) goToSlide(i); };
+  dotsContainer.appendChild(dot);
+
+  const lbl = document.createElement('div');
+  lbl.className = 'step-lbl' + (i === 0 ? ' active' : '');
+  lbl.id = 'lbl-' + i;
+  lbl.textContent = s.label;
+  labelsContainer.appendChild(lbl);
+});
+
+// ── SLIDER STATE
+let currentSlide = 0;
+const TOTAL_SLIDES = 4;
+const track = document.getElementById('slideTrack');
+
+function goToSlide(idx, dir) {
+  if (idx === currentSlide) return;
+  const prevSlide = currentSlide;
+  currentSlide = idx;
+  track.style.transform = `translateX(-${currentSlide * 100}%)`;
+  updateStepDots();
+  updateProgress();
+  // Scroll to form area smoothly
+  setTimeout(() => {
+    document.getElementById('formArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function goNext(fromSlide) {
+  if (!validateSlide(fromSlide)) return;
+  goToSlide(fromSlide + 1);
+}
+
+function goPrev(fromSlide) {
+  goToSlide(fromSlide - 1);
+}
+
+function updateStepDots() {
+  for (let i = 0; i < TOTAL_SLIDES; i++) {
+    const dot = document.getElementById('dot-' + i);
+    const lbl = document.getElementById('lbl-' + i);
+    dot.classList.remove('active', 'done');
+    lbl.classList.remove('active');
+    if (i < currentSlide) { dot.classList.add('done'); }
+    else if (i === currentSlide) { dot.classList.add('active'); lbl.classList.add('active'); }
+    if (i > 0) {
+      const line = document.getElementById('line-' + i);
+      line.classList.toggle('done', i <= currentSlide);
+    }
+  }
+}
+
+// ── VALIDATE
+function validateSlide(idx) {
+  if (idx === 0) {
+    const name = document.getElementById('custName').value.trim();
+    const wa = document.getElementById('custWA').value.trim();
+    const addr = document.getElementById('custAddr').value.trim();
+    if (!name) { showToast('⚠️ Nama wajib diisi!'); return false; }
+    if (!wa) { showToast('⚠️ Nomor WA wajib diisi!'); return false; }
+    if (!addr) { showToast('⚠️ Alamat wajib diisi!'); return false; }
+    return true;
+  }
+  if (idx === 1) {
+    if (qty.grill + qty.shabu === 0) { showToast('⚠️ Pilih minimal 1 alat masak!'); return false; }
+    return true;
+  }
+  if (idx === 2) {
+    if (qty.beef === 0) { showToast('⚠️ Beef Slice wajib minimal 1 pack!'); return false; }
+    if (!variants.beef) { showToast('⚠️ Pilih jenis Beef Slice dulu!'); return false; }
+    if (qty.chicken === 0) { showToast('⚠️ Chicken Slice wajib minimal 1 pack!'); return false; }
+    if (!variants.chicken) { showToast('⚠️ Pilih bagian ayam dulu!'); return false; }
+    if (qty.sosis === 0) { showToast('⚠️ Sosis wajib minimal 1 pack!'); return false; }
+    if (!variants.sosis) { showToast('⚠️ Pilih jenis sosis dulu!'); return false; }
+    if (qty.shabu > 0 && qty.steam === 0) { showToast('⚠️ Steamboat wajib karena kamu pilih Shabu & Grill!'); return false; }
+    if (qty.sayur === 0) { showToast('⚠️ Sayur wajib minimal 1 pack!'); return false; }
+    if (!variants.sayur) { showToast('⚠️ Pilih paket sayur dulu!'); return false; }
+    if (qty.saus === 0) { showToast('⚠️ Saus wajib minimal 1 botol!'); return false; }
+    if (!variants.saus) { showToast('⚠️ Pilih rasa saus dulu!'); return false; }
+    return true;
+  }
+  return true;
+}
+
+// ── STATE
+const prices = { grill:60000, shabu:75000, beef:40000, chicken:25000, sosis:20000, steam:45000, saus:10000 };
+const sayurPrices = { basic:15000, komplit:20000 };
+const qty = { grill:0, shabu:0, beef:0, chicken:0, sosis:0, steam:0, sayur:0, saus:0 };
+const variants = { beef:null, chicken:null, sosis:null, sayur:null, saus:null };
+let payment = null;
+const MAX = 10;
+
+function changeQty(item, delta) {
+  const newVal = qty[item] + delta;
+  if (newVal < 0) return;
+  if ((item === 'grill' || item === 'shabu')) {
+    const otherQty = item === 'grill' ? qty.shabu : qty.grill;
+    if (newVal + otherQty > MAX) { showToast('⚠️ Max 10 unit total alat masak!'); return; }
+  }
+  qty[item] = newVal;
+  document.getElementById('qty-' + item).textContent = newVal;
+  const row = document.getElementById('row-' + item);
+  if (row) row.classList.toggle('active', newVal > 0);
+  // Steamboat lock/unlock
+  if (item === 'shabu' || item === 'grill') updateSteamLock();
+  if (item === 'sayur' && variants.sayur) {
+    document.getElementById('sayur-price').textContent = 'Rp ' + sayurPrices[variants.sayur].toLocaleString('id') + ' / pack';
+  }
+  updateSummary();
+  updateProgress();
+}
+
+function updateSteamLock() {
+  const hasShabu = qty.shabu > 0;
+  const rowSteam = document.getElementById('row-steam');
+  const lockBadge = document.getElementById('steam-lock-badge');
+  const shabuOnlyTag = document.getElementById('shabu-only-tag');
+  const steamMandatory = document.getElementById('steam-mandatory');
+
+  if (hasShabu) {
+    rowSteam.classList.remove('disabled');
+    lockBadge.style.display = 'none';
+    shabuOnlyTag.style.background = '#E6F7EE';
+    shabuOnlyTag.style.borderColor = '#A3D9B1';
+    shabuOnlyTag.style.color = '#1A7A3C';
+    shabuOnlyTag.innerHTML = '✅ Wajib untuk Shabu & Grill';
+    steamMandatory.style.display = 'inline';
+  } else {
+    rowSteam.classList.add('disabled');
+    if (qty.steam > 0) { qty.steam = 0; document.getElementById('qty-steam').textContent = 0; rowSteam.classList.remove('active'); }
+    lockBadge.style.display = 'inline-flex';
+    shabuOnlyTag.style.background = '#E8F4FD';
+    shabuOnlyTag.style.borderColor = '#B3D8F0';
+    shabuOnlyTag.style.color = '#1A6FA3';
+    shabuOnlyTag.innerHTML = '🔒 Khusus Shabu & Grill';
+    steamMandatory.style.display = 'none';
+  }
+  updateSummary();
+}
+
+function selectChip(group, val) {
+  document.querySelectorAll('[id^="' + group + '-"]').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById(group + '-' + val);
+  if (el) el.classList.add('selected');
+  variants[group] = val;
+  if (group === 'sayur') {
+    document.getElementById('sayur-price').textContent = 'Rp ' + sayurPrices[val].toLocaleString('id') + ' / pack';
+  }
+  updateSummary();
+  updateProgress();
+}
+
+function selectPayment(method) {
+  payment = method;
+  document.getElementById('pay-qris').classList.remove('selected');
+  document.getElementById('pay-bca').classList.remove('selected');
+  document.getElementById('pay-' + method).classList.add('selected');
+  updateProgress();
+}
+
+function getSayurPrice() {
+  return variants.sayur ? sayurPrices[variants.sayur] : 15000;
+}
+
+function getTotal() {
+  return qty.grill*prices.grill + qty.shabu*prices.shabu + qty.beef*prices.beef +
+    qty.chicken*prices.chicken + qty.sosis*prices.sosis + qty.steam*prices.steam +
+    qty.sayur*getSayurPrice() + qty.saus*prices.saus;
+}
+
+function updateSummary() {
+  const labels = { grill:'Grill Set', shabu:'Shabu & Grill Set', beef:'Beef Slice', chicken:'Chicken Slice', sosis:'Sosis', steam:'Steamboat', sayur:'Sayur', saus:'Saus' };
+  const icons = { grill:'🔥', shabu:'🍲', beef:'🥩', chicken:'🍗', sosis:'🌭', steam:'🍜', sayur:'🥬', saus:'🫙' };
+  const vMap = {
+    beef:{ lemak:'Dengan Lemak', nlemak:'Non Lemak' },
+    chicken:{ dada:'Dada', paha:'Paha' },
+    sosis:{ sapi:'Sapi', ayam:'Ayam' },
+    sayur:{ basic:'Basic', komplit:'Komplit+Enoki' },
+    saus:{ bbq:'BBQ', bp:'Black Pepper' }
+  };
+  const items = [];
+  for (const [k, v] of Object.entries(qty)) {
+    if (v > 0) {
+      const unitPrice = k === 'sayur' ? getSayurPrice() : prices[k];
+      let vStr = variants[k] && vMap[k] ? ' (' + vMap[k][variants[k]] + ')' : '';
+      items.push({ icon:icons[k], label:labels[k]+vStr, qty:v, total:v*unitPrice });
+    }
+  }
+  const container = document.getElementById('summaryItems');
+  container.innerHTML = items.length === 0
+    ? '<div class="summary-row"><span class="summary-label">Belum ada item...</span><span></span></div>'
+    : items.map(i => `<div class="summary-row"><span class="summary-label">${i.icon} ${i.label} ×${i.qty}</span><span class="summary-value">Rp ${i.total.toLocaleString('id')}</span></div>`).join('');
+  document.getElementById('totalPrice').textContent = 'Rp ' + getTotal().toLocaleString('id');
+}
+
+function updateProgress() {
+  const name = document.getElementById('custName').value.trim();
+  const wa = document.getElementById('custWA').value.trim();
+  const addr = document.getElementById('custAddr').value.trim();
+  let score = 0;
+  if (name) score += 15; if (wa) score += 15; if (addr) score += 10;
+  if (qty.grill + qty.shabu > 0) score += 15;
+  if (qty.beef > 0 && variants.beef) score += 10;
+  if (qty.chicken > 0 && variants.chicken) score += 5;
+  if (qty.sosis > 0 && variants.sosis) score += 5;
+  if (qty.sayur > 0 && variants.sayur) score += 5;
+  if (qty.saus > 0 && variants.saus) score += 5;
+  if (payment) score += 15;
+  document.getElementById('progressBar').style.width = score + '%';
+  document.getElementById('progressPct').textContent = score + '%';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function launchConfetti() {
+  const colors = ['#FF6B35','#FF8C5A','#FFD700','#FF4444','#44BB44','#4488FF'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.top = '-10px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.width = (6 + Math.random() * 8) + 'px';
+      c.style.height = (6 + Math.random() * 8) + 'px';
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }, i * 25);
+  }
+}
+
+function sendOrder() {
+  const name = document.getElementById('custName').value.trim();
+  const wa = document.getElementById('custWA').value.trim();
+  const addr = document.getElementById('custAddr').value.trim();
+  const note = document.getElementById('custNote').value.trim();
+  if (!payment) { showToast('⚠️ Pilih metode pembayaran dulu!'); return; }
+
+  const payNames = { qris:'QRIS (GoPay/OVO/Dana/ShopeePay)', bca:'Transfer BCA' };
+  const vLabels = {
+    beef:{ lemak:'Dengan Lemak', nlemak:'Non Lemak' },
+    chicken:{ dada:'Dada', paha:'Paha' },
+    sosis:{ sapi:'Sapi', ayam:'Ayam' },
+    sayur:{ basic:'Selada + Bawang Bombay (Rp 15.000)', komplit:'Selada+Bombay+Enoki+Sawi Putih (Rp 20.000)' },
+    saus:{ bbq:'BBQ', bp:'Black Pepper' }
+  };
+
+  let msg = `🔥 *ORDER GRILLSHABU EXPRESS* 🔥\n━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `👤 *Nama:* ${name}\n📱 *WA:* ${wa}\n📍 *Alamat:* ${addr}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n🍳 *ALAT MASAK:*\n`;
+  if (qty.grill > 0) msg += `  • Grill Set ×${qty.grill} = Rp ${(qty.grill*60000).toLocaleString('id')}\n`;
+  if (qty.shabu > 0) msg += `  • Shabu & Grill Set ×${qty.shabu} = Rp ${(qty.shabu*75000).toLocaleString('id')}\n`;
+  msg += `\n🛒 *BAHAN MAKANAN:*\n`;
+  msg += `  • Beef Slice (${vLabels.beef[variants.beef]}) ×${qty.beef} = Rp ${(qty.beef*40000).toLocaleString('id')}\n`;
+  msg += `  • Chicken Slice (${vLabels.chicken[variants.chicken]}) ×${qty.chicken} = Rp ${(qty.chicken*25000).toLocaleString('id')}\n`;
+  msg += `  • Sosis ${vLabels.sosis[variants.sosis]} ×${qty.sosis} = Rp ${(qty.sosis*20000).toLocaleString('id')}\n`;
+  if (qty.steam > 0) msg += `  • Steamboat ×${qty.steam} = Rp ${(qty.steam*45000).toLocaleString('id')}\n`;
+  msg += `  • Sayur: ${vLabels.sayur[variants.sayur]} ×${qty.sayur} = Rp ${(qty.sayur*getSayurPrice()).toLocaleString('id')}\n`;
+  msg += `  • Saus ${vLabels.saus[variants.saus]} ×${qty.saus} = Rp ${(qty.saus*10000).toLocaleString('id')}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n💰 *TOTAL: Rp ${getTotal().toLocaleString('id')}*\n  _(belum termasuk ongkir)_\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n💳 *Pembayaran:* ${payNames[payment]}\n`;
+  if (note) msg += `📝 *Catatan:* ${note}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\nTerima kasih sudah order! Mohon tunggu konfirmasi dari kami ya 🙏🔥`;
+
+  launchConfetti();
+  showToast('🎉 Yeay! Membuka WhatsApp...');
+  setTimeout(() => {
+    window.open('https://wa.me/6285771276910?text=' + encodeURIComponent(msg), '_blank');
+  }, 800);
+}
+
+// ── INIT
+updateSteamLock();
+updateSummary();
+updateProgress();
+</script>
+</body>
+</html>
