@@ -681,26 +681,40 @@ function sendOrder() {
   const dateFormatted = dateVal ? new Date(dateVal).toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) : '-';
   const timeFormatted = timeVal || '-';
   if (!name) { showToast('⚠️ Nama wajib diisi!'); return; }
-  if (!wa) { showToast('⚠️ Nomor WA wajib diisi!'); return; }
+  if (!wa)   { showToast('⚠️ Nomor WA wajib diisi!'); return; }
   if (!addr) { showToast('⚠️ Alamat wajib diisi!'); return; }
   if (!payment) { showToast('⚠️ Pilih metode pembayaran dulu!'); return; }
   const payNames = { qris:'QRIS (GoPay/OVO/Dana/ShopeePay)', bca:'Transfer BCA' };
-  let msg = '\uD83D\uDD25 *ORDER ENJOY GRILL* \uD83D\uDD25\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n';
-  msg += '\uD83D\uDC64 *Nama:* ' + name + '\n\uD83D\uDCF1 *WA:* ' + wa + '\n\uD83D\uDCCD *Alamat:* ' + addr + '\n\uD83D\uDCC5 *Tanggal Acara:* ' + dateFormatted + '\n\uD83D\uDD50 *Jam Acara:* ' + timeFormatted + '\n';
-  msg += '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83C\uDF73 *ALAT MASAK:*\n';
-  if (qtyAlat.grill    > 0) msg += '  \u2022 Grill Set \xD7' + qtyAlat.grill + ' = Rp ' + (qtyAlat.grill*60000).toLocaleString('id') + '\n';
-  if (qtyAlat.shabu    > 0) msg += '  \u2022 Shabu & Grill Set \xD7' + qtyAlat.shabu + ' = Rp ' + (qtyAlat.shabu*75000).toLocaleString('id') + '\n';
-  if (qtyAlat.shabuonly> 0) msg += '  \u2022 Shabu Only \xD7' + qtyAlat.shabuonly + ' = Rp ' + (qtyAlat.shabuonly*65000).toLocaleString('id') + '\n';
-  msg += '\n\uD83D\uDED2 *BAHAN MAKANAN:*\n';
+  const SEP = '━━━━━━━━━━━━━━━━━━━━';
+  const lines = [];
+  lines.push('🔥 *ORDER ENJOY GRILL* 🔥');
+  lines.push(SEP);
+  lines.push('👤 *Nama:* ' + name);
+  lines.push('📱 *WA:* ' + wa);
+  lines.push('📍 *Alamat:* ' + addr);
+  lines.push('📅 *Tanggal Acara:* ' + dateFormatted);
+  lines.push('🕐 *Jam Acara:* ' + timeFormatted);
+  lines.push(SEP);
+  lines.push('🍳 *ALAT MASAK:*');
+  if (qtyAlat.grill     > 0) lines.push('  • Grill Set x' + qtyAlat.grill + ' = Rp ' + (qtyAlat.grill*60000).toLocaleString('id'));
+  if (qtyAlat.shabu     > 0) lines.push('  • Shabu & Grill Set x' + qtyAlat.shabu + ' = Rp ' + (qtyAlat.shabu*75000).toLocaleString('id'));
+  if (qtyAlat.shabuonly > 0) lines.push('  • Shabu Only x' + qtyAlat.shabuonly + ' = Rp ' + (qtyAlat.shabuonly*65000).toLocaleString('id'));
+  lines.push('');
+  lines.push('🛒 *BAHAN MAKANAN:*');
   Object.entries(qtyV).forEach(([k,v]) => {
-    if (v > 0) msg += '  \u2022 ' + labelsV[k] + ' \xD7' + v + ' = Rp ' + (v*pricesV[k]).toLocaleString('id') + '\n';
+    if (v > 0) lines.push('  • ' + labelsV[k] + ' x' + v + ' = Rp ' + (v*pricesV[k]).toLocaleString('id'));
   });
-  msg += '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83D\uDCB0 *TOTAL: Rp ' + getTotal().toLocaleString('id') + '*\n  _(belum termasuk ongkir)_\n';
-  msg += '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\uD83D\uDCB3 *Pembayaran:* ' + payNames[payment] + '\n';
-  if (note) msg += '\uD83D\uDCDD *Catatan:* ' + note + '\n';
-  msg += '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\nTerima kasih sudah order! \uD83D\uDE4F\uD83D\uDD25';
+  lines.push(SEP);
+  lines.push('💰 *TOTAL: Rp ' + getTotal().toLocaleString('id') + '*');
+  lines.push('  _(belum termasuk ongkir)_');
+  lines.push(SEP);
+  lines.push('💳 *Pembayaran:* ' + payNames[payment]);
+  if (note) lines.push('📝 *Catatan:* ' + note);
+  lines.push(SEP);
+  lines.push('Terima kasih sudah order! Mohon tunggu konfirmasi dari kami 🙏🔥');
+  const msg = lines.join('\n');
   launchConfetti();
-  showToast('\uD83C\uDF89 Yeay! Membuka WhatsApp...');
+  showToast('🎉 Yeay! Membuka WhatsApp...');
   setTimeout(() => { window.open('https://wa.me/6285771276910?text=' + encodeURIComponent(msg), '_blank'); }, 800);
 }
 
